@@ -4,6 +4,7 @@ import 'loan_emi_calculator.dart';
 import 'time_unit_calculator.dart';
 import 'currency_converter.dart';
 import 'unit_converter.dart'; // ✅ Import Unit Converter Screen
+import 'date_calculation.dart'; // ✅ Import Date Calculation Screen
 
 class AllCalculatorsScreen extends StatelessWidget {
   const AllCalculatorsScreen({super.key});
@@ -60,7 +61,10 @@ class AllCalculatorsScreen extends StatelessWidget {
               context,
               MaterialPageRoute(
                   builder: (context) => CurrencyConverterScreen()));
-        } else {
+        } else if (label == "Date Calculations") {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => DateCalculationScreen()));
+        } else if (label == "Calculator") {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text("$label is in working state"),
             duration: Duration(seconds: 2),

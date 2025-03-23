@@ -1,156 +1,194 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/firebase_service.dart';
 
 class TemperatureConverterScreen extends StatefulWidget {
   const TemperatureConverterScreen({super.key});
 
   @override
-  _TemperatureConverterScreenState createState() =>
-      _TemperatureConverterScreenState();
+  State<TemperatureConverterScreen> createState() => _TemperatureConverterScreenState();
 }
 
-class _TemperatureConverterScreenState
-    extends State<TemperatureConverterScreen> {
-  final FirebaseService _firebaseService = FirebaseService();
-  final TextEditingController _controller = TextEditingController();
-  double _inputValue = 0.0;
-  double _convertedValue = 0.0;
+class _TemperatureConverterScreenState extends State<TemperatureConverterScreen> {
+  final TextEditingController _inputController = TextEditingController();
   String _fromUnit = 'Celsius';
-  String _toUnit = 'Fahrenheit';
+  String _toUnit1 = 'Fahrenheit';
+  String _toUnit2 = 'Kelvin';
+  int _unitCount = 2; // Set to 2 for results
+  String _result1 = '', _result2 = '';
 
-  final Map<String, Function(double)> _conversionFunctions = {
-    'Celsius to Fahrenheit': (c) => (c * 9 / 5) + 32,
-    'Celsius to Kelvin': (c) => c + 273.15,
-    'Fahrenheit to Celsius': (f) => (f - 32) * 5 / 9,
-    'Fahrenheit to Kelvin': (f) => (f - 32) * 5 / 9 + 273.15,
-    'Kelvin to Celsius': (k) => k - 273.15,
-    'Kelvin to Fahrenheit': (k) => (k - 273.15) * 9 / 5 + 32,
-  };
+  final List<String> _units = [
+    'Celsius',
+    'Fahrenheit',
+    'Kelvin'
+  ]; 
+  final FirebaseService _firebaseService = FirebaseService(); 
 
   void _convert() {
-    setState(() {
-      String key = '$_fromUnit to $_toUnit';
-      if (_conversionFunctions.containsKey(key)) {
-        _convertedValue = _conversionFunctions[key]!(_inputValue);
+    if (_inputController.text.isEmpty) return;
+    try {
+      double inputValue = double.parse(_inputController.text);
+      double inCelsius;
 
-        // Add to Firebase history
-        _firebaseService.addCalculationToHistory(
-          calculationType: 'Temperature Conversion',
-          expression: '$_inputValue $_fromUnit to $_toUnit',
-          result: '${_convertedValue.toStringAsFixed(2)} $_toUnit',
-        );
+      // Convert input to Celsius
+      if (_fromUnit == 'Fahrenheit') {
+        inCelsius = (inputValue - 32) * 5 / 9;
+      } else if (_fromUnit == 'Kelvin') {
+        inCelsius = inputValue - 273.15;
       } else {
-        _convertedValue = _inputValue;
+        inCelsius = inputValue;
       }
-    });
+
+      setState(() {
+        _result1 = (_fromUnit == 'Fahrenheit' ? (inCelsius * 9 / 5 + 32) : (_fromUnit == 'Kelvin' ? (inCelsius + 273.15) : inCelsius)).toStringAsFixed(2);
+        _result2 = (_fromUnit == 'Fahrenheit' ? (inCelsius + 273.15) : (_fromUnit == 'Kelvin' ? (inCelsius * 9 / 5 + 32) : (inCelsius + 273.15))).toStringAsFixed(2);
+      });
+
+      // Add to Firebase history
+      String historyEntry = '$inputValue $_fromUnit = $_result1 $_toUnit1, $_result2 $_toUnit2';
+      _firebaseService.addCalculationToHistory(
+        calculationType: 'Temperature Conversion',
+        expression: historyEntry,
+        result: '${_result1} $_toUnit1',
+      );
+
+    } catch (e) {
+      setState(() {
+        _result1 = 'Invalid input';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Temperature Converter"),
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.purpleAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: _controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Enter temperature",
-                  hintStyle: TextStyle(color: Colors.black),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _inputValue = double.tryParse(value) ?? 0.0;
-                  });
-                },
-              ),
-              SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          title: const Text('Temperature Converter'),
+          backgroundColor: Colors.deepPurple),
+      backgroundColor: Colors.black,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildDropdownUnitCount(),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _inputController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration:
+                  _inputDecoration('Enter Temperature', FontAwesomeIcons.thermometerHalf),
+            ),
+            const SizedBox(height: 10),
+            _buildDropdownRow('From', _fromUnit, (value) {
+              setState(() {
+                _fromUnit = value!;
+              });
+            }),
+            const SizedBox(height: 10),
+            _buildDropdownRow('To', _toUnit1, (value) {
+              setState(() {
+                _toUnit1 = value!;
+              });
+            }),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: _convert, child: const Text('Convert')),
+            Expanded(
+              child: ListView(
                 children: [
-                  DropdownButton<String>(
-                    value: _fromUnit,
-                    dropdownColor: Colors.white,
-                    items:
-                        ['Celsius', 'Fahrenheit', 'Kelvin'].map((String unit) {
-                      return DropdownMenuItem<String>(
-                        value: unit,
-                        child:
-                            Text(unit, style: TextStyle(color: Colors.black)),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _fromUnit = value!;
-                      });
-                    },
-                  ),
-                  Text("to",
-                      style: TextStyle(fontSize: 18, color: Colors.white)),
-                  DropdownButton<String>(
-                    value: _toUnit,
-                    dropdownColor: Colors.white,
-                    items:
-                        ['Celsius', 'Fahrenheit', 'Kelvin'].map((String unit) {
-                      return DropdownMenuItem<String>(
-                        value: unit,
-                        child:
-                            Text(unit, style: TextStyle(color: Colors.black)),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _toUnit = value!;
-                      });
-                    },
-                  ),
+                  _buildResultBox(_result1, _toUnit1),
+                  if (_unitCount >= 2) _buildResultBox(_result2, _toUnit2),
+                  const SizedBox(height: 20),
                 ],
               ),
-              SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: _convert,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.deepPurple,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                ),
-                child: Text("Convert",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-              SizedBox(height: 16.0),
-              Text(
-                "Converted Value: ${_convertedValue.toStringAsFixed(3)} $_toUnit",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildDropdownUnitCount() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: _dropdownBoxDecoration(),
+      child: DropdownButton<int>(
+        value: _unitCount,
+        isExpanded: true,
+        dropdownColor: Colors.grey[900],
+        style: const TextStyle(color: Colors.white),
+        underline: Container(),
+        items: [2] // Fixed to 2 for temperature conversion
+            .map((int count) => DropdownMenuItem<int>(
+                value: count, child: Text('$count Units')))
+            .toList(),
+        onChanged: (value) => setState(() => _unitCount = value!),
+      ),
+    );
+  }
+
+  Widget _buildDropdownRow(
+      String label, String value, Function(String?) onChanged) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: _dropdownBoxDecoration(),
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              dropdownColor: Colors.grey[900],
+              style: const TextStyle(color: Colors.white),
+              underline: Container(),
+              items: _units
+                  .map((unit) =>
+                      DropdownMenuItem<String>(value: unit, child: Text(unit)))
+                  .toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResultBox(String result, String unit) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.deepPurple.shade400),
+      ),
+      child: Column(
+        children: [
+          Text(result.isNotEmpty ? '$result $unit' : '0',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.deepPurple.shade400),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      prefixIcon: Icon(icon, color: Colors.deepPurple),
+    );
+  }
+
+  BoxDecoration _dropdownBoxDecoration() {
+    return BoxDecoration(
+        border: Border.all(color: Colors.deepPurple.shade400),
+        borderRadius: BorderRadius.circular(8));
   }
 }

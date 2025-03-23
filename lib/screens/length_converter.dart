@@ -1,190 +1,212 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/firebase_service.dart';
 
 class LengthConverterScreen extends StatefulWidget {
   const LengthConverterScreen({super.key});
 
   @override
-  _LengthConverterScreenState createState() => _LengthConverterScreenState();
+  State<LengthConverterScreen> createState() => _LengthConverterScreenState();
 }
 
 class _LengthConverterScreenState extends State<LengthConverterScreen> {
-  final FirebaseService _firebaseService = FirebaseService();
-  final TextEditingController _controller = TextEditingController();
-  double _inputValue = 0.0;
-  double _convertedValue = 0.0;
+  final TextEditingController _inputController = TextEditingController();
   String _fromUnit = 'Meters';
-  String _toUnit = 'Kilometers';
+  String _toUnit1 = 'Kilometers';
+  String _toUnit2 = 'Miles';
+  String _toUnit3 = 'Feet';
+  int _unitCount = 1;
+  String _result1 = '', _result2 = '', _result3 = '';
 
-  final Map<String, Function(double)> _conversionFunctions = {
-    'Meters to Kilometers': (m) => m / 1000,
-    'Meters to Centimeters': (m) => m * 100,
-    'Meters to Inches': (m) => m * 39.3701,
-    'Meters to Feet': (m) => m * 3.28084,
-    'Meters to Miles': (m) => m / 1609.34,
-    'Kilometers to Meters': (km) => km * 1000,
-    'Kilometers to Centimeters': (km) => km * 100000,
-    'Kilometers to Inches': (km) => km * 39370.1,
-    'Kilometers to Feet': (km) => km * 3280.84,
-    'Kilometers to Miles': (km) => km / 1.60934,
-    'Centimeters to Meters': (cm) => cm / 100,
-    'Centimeters to Kilometers': (cm) => cm / 100000,
-    'Centimeters to Inches': (cm) => cm / 2.54,
-    'Centimeters to Feet': (cm) => cm / 30.48,
-    'Centimeters to Miles': (cm) => cm / 160934,
-    'Inches to Meters': (inches) => inches / 39.3701,
-    'Inches to Kilometers': (inches) => inches / 39370.1,
-    'Inches to Centimeters': (inches) => inches * 2.54,
-    'Inches to Feet': (inches) => inches / 12,
-    'Inches to Miles': (inches) => inches / 63360,
-    'Feet to Meters': (feet) => feet / 3.28084,
-    'Feet to Kilometers': (feet) => feet / 3280.84,
-    'Feet to Centimeters': (feet) => feet * 30.48,
-    'Feet to Inches': (feet) => feet * 12,
-    'Feet to Miles': (feet) => feet / 5280,
-    'Miles to Meters': (miles) => miles * 1609.34,
-    'Miles to Kilometers': (miles) => miles * 1.60934,
-    'Miles to Centimeters': (miles) => miles * 160934,
-    'Miles to Inches': (miles) => miles * 63360,
-    'Miles to Feet': (miles) => miles * 5280,
+  final List<String> _units = [
+    'Meters',
+    'Kilometers',
+    'Miles',
+    'Feet'
+  ]; 
+  final FirebaseService _firebaseService = FirebaseService(); 
+
+  final Map<String, double> _toMeters = {
+    'Meters': 1,
+    'Kilometers': 1000,
+    'Miles': 1609.34,
+    'Feet': 0.3048,
   };
 
   void _convert() {
-    setState(() {
-      String key = '$_fromUnit to $_toUnit';
-      if (_conversionFunctions.containsKey(key)) {
-        _convertedValue = _conversionFunctions[key]!(_inputValue);
+    if (_inputController.text.isEmpty) return;
+    try {
+      double inputValue = double.parse(_inputController.text);
+      double inMeters = inputValue * _toMeters[_fromUnit]!;
+      setState(() {
+        _result1 =
+            (inMeters / _toMeters[_toUnit1]!).toStringAsFixed(6);
+        _result2 = _unitCount >= 2
+            ? (inMeters / _toMeters[_toUnit2]!).toStringAsFixed(6)
+            : '';
+        _result3 = _unitCount == 3
+            ? (inMeters / _toMeters[_toUnit3]!).toStringAsFixed(6)
+            : '';
+      });
 
-        // Add to Firebase history
-        _firebaseService.addCalculationToHistory(
-          calculationType: 'Length Conversion',
-          expression: '$_inputValue $_fromUnit to $_toUnit',
-          result: '${_convertedValue.toStringAsFixed(2)} $_toUnit',
-        );
-      } else {
-        _convertedValue = _inputValue;
+      // Add to Firebase history
+      String historyEntry = '$inputValue $_fromUnit = $_result1 $_toUnit1';
+      if (_unitCount >= 2 && _result2.isNotEmpty) {
+        historyEntry += ', $_result2 $_toUnit2';
       }
-    });
+      if (_unitCount == 3 && _result3.isNotEmpty) {
+        historyEntry += ', $_result3 $_toUnit3';
+      }
+      _firebaseService.addCalculationToHistory(
+        calculationType: 'Length Conversion',
+        expression: historyEntry,
+        result: '${_result1} $_toUnit1',
+      );
+
+    } catch (e) {
+      setState(() {
+        _result1 = 'Invalid input';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Length Converter"),
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.purpleAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: _controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Enter length",
-                  hintStyle: TextStyle(color: Colors.black),
-                  filled: true,
-                  fillColor: Colors.black,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _inputValue = double.tryParse(value) ?? 0.0;
-                  });
-                },
-              ),
-              SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          title: const Text('Length Converter'),
+          backgroundColor: Colors.deepPurple),
+      backgroundColor: Colors.black,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildDropdownUnitCount(),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _inputController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration:
+                  _inputDecoration('Enter Length', FontAwesomeIcons.ruler),
+            ),
+            const SizedBox(height: 10),
+            _buildDropdownRow('From', _fromUnit, (value) {
+              setState(() {
+                _fromUnit = value!;
+              });
+            }),
+            const SizedBox(height: 10),
+            _buildDropdownRow('To', _toUnit1, (value) {
+              setState(() {
+                _toUnit1 = value!;
+              });
+            }),
+            if (_unitCount >= 2)
+              _buildDropdownRow('Second To', _toUnit2,
+                  (value) => setState(() => _toUnit2 = value!)),
+            if (_unitCount == 3)
+              _buildDropdownRow('Third To', _toUnit3,
+                  (value) => setState(() => _toUnit3 = value!)),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: _convert, child: const Text('Convert')),
+            Expanded(
+              child: ListView(
                 children: [
-                  DropdownButton<String>(
-                    value: _fromUnit,
-                    dropdownColor: Colors.white,
-                    items: [
-                      'Meters',
-                      'Kilometers',
-                      'Centimeters',
-                      'Inches',
-                      'Feet',
-                      'Miles'
-                    ].map((String unit) {
-                      return DropdownMenuItem<String>(
-                        value: unit,
-                        child:
-                            Text(unit, style: TextStyle(color: Colors.black)),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _fromUnit = value!;
-                      });
-                    },
-                  ),
-                  Text("to",
-                      style: TextStyle(fontSize: 18, color: Colors.white)),
-                  DropdownButton<String>(
-                    value: _toUnit,
-                    dropdownColor: Colors.white,
-                    items: [
-                      'Meters',
-                      'Kilometers',
-                      'Centimeters',
-                      'Inches',
-                      'Feet',
-                      'Miles'
-                    ].map((String unit) {
-                      return DropdownMenuItem<String>(
-                        value: unit,
-                        child:
-                            Text(unit, style: TextStyle(color: Colors.black)),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _toUnit = value!;
-                      });
-                    },
-                  ),
+                  _buildResultBox(_result1, _toUnit1),
+                  if (_unitCount >= 2) _buildResultBox(_result2, _toUnit2),
+                  if (_unitCount == 3) _buildResultBox(_result3, _toUnit3),
+                  const SizedBox(height: 20),
                 ],
               ),
-              SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: _convert,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.deepPurple,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                ),
-                child: Text("Convert",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-              SizedBox(height: 16.0),
-              Text(
-                "Converted Value: ${_convertedValue.toStringAsFixed(3)} $_toUnit",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildDropdownUnitCount() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: _dropdownBoxDecoration(),
+      child: DropdownButton<int>(
+        value: _unitCount,
+        isExpanded: true,
+        dropdownColor: Colors.grey[900],
+        style: const TextStyle(color: Colors.white),
+        underline: Container(),
+        items: [1, 2, 3]
+            .map((int count) => DropdownMenuItem<int>(
+                value: count, child: Text('$count Units')))
+            .toList(),
+        onChanged: (value) => setState(() => _unitCount = value!),
+      ),
+    );
+  }
+
+  Widget _buildDropdownRow(
+      String label, String value, Function(String?) onChanged) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: _dropdownBoxDecoration(),
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              dropdownColor: Colors.grey[900],
+              style: const TextStyle(color: Colors.white),
+              underline: Container(),
+              items: _units
+                  .map((unit) =>
+                      DropdownMenuItem<String>(value: unit, child: Text(unit)))
+                  .toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResultBox(String result, String unit) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.deepPurple.shade400),
+      ),
+      child: Column(
+        children: [
+          Text(result.isNotEmpty ? '$result $unit' : '0',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.deepPurple.shade400),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      prefixIcon: Icon(icon, color: Colors.deepPurple),
+    );
+  }
+
+  BoxDecoration _dropdownBoxDecoration() {
+    return BoxDecoration(
+        border: Border.all(color: Colors.deepPurple.shade400),
+        borderRadius: BorderRadius.circular(8));
   }
 }

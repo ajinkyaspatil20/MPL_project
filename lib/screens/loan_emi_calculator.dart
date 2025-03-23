@@ -53,89 +53,146 @@ class _LoanEmiCalculatorState extends State<LoanEmiCalculator> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Loan EMI Calculator",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
-        backgroundColor: Colors.deepPurple[900],
-        elevation: 6.0,
-        shadowColor: Colors.deepPurple[300],
+        title: const Text(
+          "Loan EMI Calculator",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        backgroundColor: Colors.deepPurple,
       ),
-      backgroundColor: Colors.black,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // EMI Banner Image
-              Center(
-                child: Image.asset(
-                  "assets/images/EMI-Calculator.png", // Make sure this image exists
-                  height: 150,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Input fields
-              _buildTextField(loanAmountController, "Loan Amount (₹)",
-                  FontAwesomeIcons.rupeeSign),
-              _buildTextField(interestRateController,
-                  "Annual Interest Rate (%)", FontAwesomeIcons.percent),
-              _buildTextField(tenureController, "Loan Tenure (Months)",
-                  FontAwesomeIcons.calendar),
-
-              const SizedBox(height: 20),
-
-              // EMI Calculation button
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: calculateEMI,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 8,
-                    shadowColor: Colors.deepPurple[300],
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black, Color(0xFF1a1a1a)],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // EMI Banner Image
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 16),
+                  child: Image.asset(
+                    "assets/images/EMI-Calculator.png",
+                    height: 150,
+                    fit: BoxFit.cover,
                   ),
-                  icon: const Icon(FontAwesomeIcons.calculator,
-                      color: Colors.white),
-                  label: const Text("Calculate EMI",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
-              ),
 
-              const SizedBox(height: 20),
-
-              // EMI result display
-              Center(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 500),
-                  padding: const EdgeInsets.all(20),
+                // Input fields section
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple[700],
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.black.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: Colors.deepPurple.withOpacity(0.5), width: 1),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTextField(loanAmountController, "Loan Amount (₹)",
+                          FontAwesomeIcons.rupeeSign),
+                      const SizedBox(height: 16),
+                      _buildTextField(interestRateController,
+                          "Annual Interest Rate (%)", FontAwesomeIcons.percent),
+                      const SizedBox(height: 16),
+                      _buildTextField(tenureController, "Loan Tenure (Months)",
+                          FontAwesomeIcons.calendar),
+                    ],
+                  ),
+                ),
+
+                // Calculate Button
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 24),
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: calculateEMI,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(color: Colors.white, width: 2),
+                      ),
+                    ),
+                    icon: const Icon(FontAwesomeIcons.calculator,
+                        color: Colors.white),
+                    label: const Text(
+                      "Calculate EMI",
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+
+                // EMI Result Display
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.deepPurple.shade900,
+                        Colors.deepPurple.shade700
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.deepPurple.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: Offset(0, 6),
+                        blurRadius: 15,
+                        spreadRadius: 5,
                       ),
                     ],
                   ),
-                  child: Text(
-                    "EMI: ₹${emiResult.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                        fontSize: 24,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold),
+                  child: Column(
+                    children: [
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(FontAwesomeIcons.moneyBillWave,
+                              color: Colors.white, size: 24),
+                          SizedBox(width: 12),
+                          Text(
+                            "Monthly EMI",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                letterSpacing: 1),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "₹${emiResult.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -144,27 +201,26 @@ class _LoanEmiCalculatorState extends State<LoanEmiCalculator> {
 
   Widget _buildTextField(
       TextEditingController controller, String label, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.number,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[400]),
-          prefixIcon: Icon(icon, color: Colors.deepPurpleAccent),
-          filled: true,
-          fillColor: Colors.grey[850],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
-          ),
-        ),
+            filled: true,
+            fillColor: Colors.black.withOpacity(0.6),
+            labelText: label,
+            labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+            prefixIcon: Icon(icon, color: Colors.deepPurple, size: 20),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.deepPurple.withOpacity(0.5)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+            )),
       ),
     );
   }

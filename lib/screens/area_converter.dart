@@ -2,44 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/firebase_service.dart';
 
-class MassConverterScreen extends StatefulWidget {
-  const MassConverterScreen({super.key});
+class AreaConverterScreen extends StatefulWidget {
+  const AreaConverterScreen({super.key});
 
   @override
-  State<MassConverterScreen> createState() => _MassConverterScreenState();
+  State<AreaConverterScreen> createState() => _AreaConverterScreenState();
 }
 
-class _MassConverterScreenState extends State<MassConverterScreen> {
+class _AreaConverterScreenState extends State<AreaConverterScreen> {
   final TextEditingController _inputController = TextEditingController();
-  String _fromUnit = 'Kilograms';
-  String _toUnit1 = 'Grams';
-  String _toUnit2 = 'Pounds';
-  String _toUnit3 = 'Ounces';
+  String _fromUnit = 'Square Meters';
+  String _toUnit1 = 'Square Kilometers';
+  String _toUnit2 = 'Acres';
+  String _toUnit3 = 'Hectares';
   int _unitCount = 1;
   String _result1 = '', _result2 = '', _result3 = '';
 
-  final List<String> _units = ['Kilograms', 'Grams', 'Pounds', 'Ounces'];
-  final FirebaseService _firebaseService = FirebaseService();
+  final List<String> _units = [
+    'Square Meters',
+    'Square Kilometers',
+    'Acres',
+    'Hectares'
+  ]; 
+  final FirebaseService _firebaseService = FirebaseService(); 
 
-  final Map<String, double> _toKilograms = {
-    'Kilograms': 1,
-    'Grams': 0.001,
-    'Pounds': 0.453592,
-    'Ounces': 0.0283495,
+  final Map<String, double> _toSquareMeters = {
+    'Square Meters': 1,
+    'Square Kilometers': 1e6,
+    'Acres': 4046.86,
+    'Hectares': 10000,
   };
 
   void _convert() {
     if (_inputController.text.isEmpty) return;
     try {
       double inputValue = double.parse(_inputController.text);
-      double inKilograms = inputValue * _toKilograms[_fromUnit]!;
+      double inSquareMeters = inputValue * _toSquareMeters[_fromUnit]!;
       setState(() {
-        _result1 = (inKilograms / _toKilograms[_toUnit1]!).toStringAsFixed(6);
+        _result1 =
+            (inSquareMeters / _toSquareMeters[_toUnit1]!).toStringAsFixed(6);
         _result2 = _unitCount >= 2
-            ? (inKilograms / _toKilograms[_toUnit2]!).toStringAsFixed(6)
+            ? (inSquareMeters / _toSquareMeters[_toUnit2]!).toStringAsFixed(6)
             : '';
         _result3 = _unitCount == 3
-            ? (inKilograms / _toKilograms[_toUnit3]!).toStringAsFixed(6)
+            ? (inSquareMeters / _toSquareMeters[_toUnit3]!).toStringAsFixed(6)
             : '';
       });
 
@@ -52,10 +58,11 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
         historyEntry += ', $_result3 $_toUnit3';
       }
       _firebaseService.addCalculationToHistory(
-        calculationType: 'Mass Conversion',
+        calculationType: 'Area Conversion',
         expression: historyEntry,
         result: '${_result1} $_toUnit1',
       );
+
     } catch (e) {
       setState(() {
         _result1 = 'Invalid input';
@@ -67,7 +74,7 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Mass Converter'),
+          title: const Text('Area Converter'),
           backgroundColor: Colors.deepPurple),
       backgroundColor: Colors.black,
       body: Padding(
@@ -81,7 +88,7 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
               keyboardType: TextInputType.number,
               style: const TextStyle(color: Colors.white),
               decoration:
-                  _inputDecoration('Enter Mass', FontAwesomeIcons.weight),
+                  _inputDecoration('Enter Area', FontAwesomeIcons.ruler),
             ),
             const SizedBox(height: 10),
             _buildDropdownRow('From', _fromUnit, (value) {

@@ -2,60 +2,57 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/firebase_service.dart';
 
-class MassConverterScreen extends StatefulWidget {
-  const MassConverterScreen({super.key});
+class VolumeConverterScreen extends StatefulWidget {
+  const VolumeConverterScreen({super.key});
 
   @override
-  State<MassConverterScreen> createState() => _MassConverterScreenState();
+  State<VolumeConverterScreen> createState() => _VolumeConverterScreenState();
 }
 
-class _MassConverterScreenState extends State<MassConverterScreen> {
+class _VolumeConverterScreenState extends State<VolumeConverterScreen> {
   final TextEditingController _inputController = TextEditingController();
-  String _fromUnit = 'Kilograms';
-  String _toUnit1 = 'Grams';
-  String _toUnit2 = 'Pounds';
-  String _toUnit3 = 'Ounces';
-  int _unitCount = 1;
+  String _fromUnit = 'Liters';
+  String _toUnit1 = 'Milliliters';
+  String _toUnit2 = 'Gallons';
+  String _toUnit3 = 'Cubic Meters';
+  int _unitCount = 3; // Set to 3 for results
   String _result1 = '', _result2 = '', _result3 = '';
 
-  final List<String> _units = ['Kilograms', 'Grams', 'Pounds', 'Ounces'];
-  final FirebaseService _firebaseService = FirebaseService();
+  final List<String> _units = [
+    'Liters',
+    'Milliliters',
+    'Gallons',
+    'Cubic Meters'
+  ]; 
+  final FirebaseService _firebaseService = FirebaseService(); 
 
-  final Map<String, double> _toKilograms = {
-    'Kilograms': 1,
-    'Grams': 0.001,
-    'Pounds': 0.453592,
-    'Ounces': 0.0283495,
+  final Map<String, double> _toLiters = {
+    'Liters': 1,
+    'Milliliters': 0.001,
+    'Gallons': 3.78541,
+    'Cubic Meters': 1000,
   };
 
   void _convert() {
     if (_inputController.text.isEmpty) return;
     try {
       double inputValue = double.parse(_inputController.text);
-      double inKilograms = inputValue * _toKilograms[_fromUnit]!;
+      double inLiters = inputValue * _toLiters[_fromUnit]!;
       setState(() {
-        _result1 = (inKilograms / _toKilograms[_toUnit1]!).toStringAsFixed(6);
-        _result2 = _unitCount >= 2
-            ? (inKilograms / _toKilograms[_toUnit2]!).toStringAsFixed(6)
-            : '';
-        _result3 = _unitCount == 3
-            ? (inKilograms / _toKilograms[_toUnit3]!).toStringAsFixed(6)
-            : '';
+        _result1 =
+            (inLiters / _toLiters[_toUnit1]!).toStringAsFixed(6);
+        _result2 = (inLiters / _toLiters[_toUnit2]!).toStringAsFixed(6);
+        _result3 = (inLiters / _toLiters[_toUnit3]!).toStringAsFixed(6);
       });
 
       // Add to Firebase history
-      String historyEntry = '$inputValue $_fromUnit = $_result1 $_toUnit1';
-      if (_unitCount >= 2 && _result2.isNotEmpty) {
-        historyEntry += ', $_result2 $_toUnit2';
-      }
-      if (_unitCount == 3 && _result3.isNotEmpty) {
-        historyEntry += ', $_result3 $_toUnit3';
-      }
+      String historyEntry = '$inputValue $_fromUnit = $_result1 $_toUnit1, $_result2 $_toUnit2, $_result3 $_toUnit3';
       _firebaseService.addCalculationToHistory(
-        calculationType: 'Mass Conversion',
+        calculationType: 'Volume Conversion',
         expression: historyEntry,
         result: '${_result1} $_toUnit1',
       );
+
     } catch (e) {
       setState(() {
         _result1 = 'Invalid input';
@@ -67,7 +64,7 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Mass Converter'),
+          title: const Text('Volume Converter'),
           backgroundColor: Colors.deepPurple),
       backgroundColor: Colors.black,
       body: Padding(
@@ -81,7 +78,7 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
               keyboardType: TextInputType.number,
               style: const TextStyle(color: Colors.white),
               decoration:
-                  _inputDecoration('Enter Mass', FontAwesomeIcons.weight),
+                  _inputDecoration('Enter Volume', FontAwesomeIcons.tint),
             ),
             const SizedBox(height: 10),
             _buildDropdownRow('From', _fromUnit, (value) {
@@ -129,7 +126,7 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
         dropdownColor: Colors.grey[900],
         style: const TextStyle(color: Colors.white),
         underline: Container(),
-        items: [1, 2, 3]
+        items: [3] // Fixed to 3 for volume conversion
             .map((int count) => DropdownMenuItem<int>(
                 value: count, child: Text('$count Units')))
             .toList(),

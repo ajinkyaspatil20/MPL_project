@@ -2,35 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/firebase_service.dart';
 
-class TimeUnitCalculator extends StatefulWidget {
-  const TimeUnitCalculator({super.key});
+class DataConverterScreen extends StatefulWidget {
+  const DataConverterScreen({super.key});
 
   @override
-  State<TimeUnitCalculator> createState() => _TimeUnitCalculatorState();
+  State<DataConverterScreen> createState() => _DataConverterScreenState();
 }
 
-class _TimeUnitCalculatorState extends State<TimeUnitCalculator> {
+class _DataConverterScreenState extends State<DataConverterScreen> {
   final TextEditingController _inputController = TextEditingController();
-  String _fromUnit = 'Seconds';
-  String _toUnit = 'Minutes'; // Initialize output unit
+  String _fromUnit = 'Bit';
+  String _toUnit = 'Byte'; // Initialize output unit
 
   String _result1 = '';
 
   final FirebaseService _firebaseService = FirebaseService();
 
   final List<String> _units = [
-    'Seconds',
-    'Minutes',
-    'Hours',
-    'Days'
+    'Bit',
+    'Kilobit',
+    'Megabit',
+    'Gigabit',
+    'Terabit',
+    'Byte',
+    'Kilobyte',
+    'Megabyte',
+    'Gigabyte',
+    'Terabyte'
   ];
 
-  // Conversion factors to seconds
-  final Map<String, double> _toSecondFactors = {
-    'Seconds': 1,
-    'Minutes': 60,
-    'Hours': 3600,
-    'Days': 86400,
+  final List<String> _toUnits = [
+    'Byte',
+    'Kilobyte',
+    'Megabyte',
+    'Gigabyte',
+    'Terabyte'
+  ];
+
+  // Conversion factors to bits
+  final Map<String, double> _toBitFactors = {
+    'Bit': 1,
+    'Kilobit': 1000,
+    'Megabit': 1000000,
+    'Gigabit': 1000000000,
+    'Terabit': 1000000000000,
+    'Byte': 8,
+    'Kilobyte': 8000,
+    'Megabyte': 8000000,
+    'Gigabyte': 8000000000,
+    'Terabyte': 8000000000000,
   };
 
   Future<void> _convert() async {
@@ -38,14 +58,14 @@ class _TimeUnitCalculatorState extends State<TimeUnitCalculator> {
 
     try {
       double inputValue = double.parse(_inputController.text);
-      double inSeconds = inputValue * _toSecondFactors[_fromUnit]!; // Correct conversion logic
+      double inBits = inputValue * _toBitFactors[_fromUnit]!; // Correct conversion logic
       setState(() {
-        _result1 = (inSeconds / _toSecondFactors[_toUnit]!).toStringAsFixed(6);
+        _result1 = (inBits / _toBitFactors[_toUnit]!).toStringAsFixed(6);
       });
 
       String historyEntry = '$inputValue $_fromUnit = $_result1 $_toUnit'; 
       await _firebaseService.addCalculationToHistory(
-        calculationType: 'Time Conversion',
+        calculationType: 'Data Conversion',
         expression: historyEntry,
         result: '$_result1 $_toUnit',
       );
@@ -66,7 +86,7 @@ class _TimeUnitCalculatorState extends State<TimeUnitCalculator> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Time Unit Converter'),
+        title: const Text('Data Converter'),
         backgroundColor: Colors.deepPurple,
       ),
       backgroundColor: Colors.black,
@@ -90,7 +110,7 @@ class _TimeUnitCalculatorState extends State<TimeUnitCalculator> {
                   borderSide: const BorderSide(color: Colors.deepPurple),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                prefixIcon: const Icon(FontAwesomeIcons.clock,
+                prefixIcon: const Icon(FontAwesomeIcons.database,
                     color: Colors.deepPurple),
               ),
               onChanged: (value) {},
@@ -146,7 +166,7 @@ class _TimeUnitCalculatorState extends State<TimeUnitCalculator> {
                       dropdownColor: Colors.grey[900],
                       style: const TextStyle(color: Colors.white),
                       underline: Container(),
-                      items: _units.map((String unit) {
+                      items: _toUnits.map((String unit) {
                         return DropdownMenuItem<String>(
                           value: unit,
                           child: Text(unit),
@@ -210,5 +230,4 @@ class _TimeUnitCalculatorState extends State<TimeUnitCalculator> {
       ),
     );
   }
-
 }
