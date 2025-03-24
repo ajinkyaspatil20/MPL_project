@@ -23,8 +23,8 @@ class _AreaConverterScreenState extends State<AreaConverterScreen> {
     'Square Kilometers',
     'Acres',
     'Hectares'
-  ]; 
-  final FirebaseService _firebaseService = FirebaseService(); 
+  ];
+  final FirebaseService _firebaseService = FirebaseService();
 
   final Map<String, double> _toSquareMeters = {
     'Square Meters': 1,
@@ -58,9 +58,8 @@ class _AreaConverterScreenState extends State<AreaConverterScreen> {
         historyEntry += ', $_result3 $_toUnit3';
       }
       _firebaseService.addCalculationToHistory(
-        calculationType: 'Area Conversion',
-        expression: historyEntry,
-        result: '${_result1} $_toUnit1',
+        historyEntry, // Pass the history entry as the expression
+        '${_result1} $_toUnit1', // Pass the result
       );
 
     } catch (e) {
@@ -72,11 +71,17 @@ class _AreaConverterScreenState extends State<AreaConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var theme = Theme.of(context);
+    var textColor = theme.textTheme.bodyLarge?.color;
+    var backgroundColor = theme.scaffoldBackgroundColor;
+    var cardColor = theme.cardColor;
+
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Area Converter'),
-          backgroundColor: Colors.deepPurple),
-      backgroundColor: Colors.black,
+        title: const Text('Area Converter'),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+      ),
+      backgroundColor: backgroundColor,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -86,9 +91,8 @@ class _AreaConverterScreenState extends State<AreaConverterScreen> {
             TextField(
               controller: _inputController,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration:
-                  _inputDecoration('Enter Area', FontAwesomeIcons.ruler),
+              style: TextStyle(color: textColor),
+              decoration: _inputDecoration('Enter Area', FontAwesomeIcons.ruler, theme),
             ),
             const SizedBox(height: 10),
             _buildDropdownRow('From', _fromUnit, (value) {
@@ -113,9 +117,9 @@ class _AreaConverterScreenState extends State<AreaConverterScreen> {
             Expanded(
               child: ListView(
                 children: [
-                  _buildResultBox(_result1, _toUnit1),
-                  if (_unitCount >= 2) _buildResultBox(_result2, _toUnit2),
-                  if (_unitCount == 3) _buildResultBox(_result3, _toUnit3),
+                  _buildResultBox(_result1, _toUnit1, cardColor, textColor),
+                  if (_unitCount >= 2) _buildResultBox(_result2, _toUnit2, cardColor, textColor),
+                  if (_unitCount == 3) _buildResultBox(_result3, _toUnit3, cardColor, textColor),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -133,8 +137,6 @@ class _AreaConverterScreenState extends State<AreaConverterScreen> {
       child: DropdownButton<int>(
         value: _unitCount,
         isExpanded: true,
-        dropdownColor: Colors.grey[900],
-        style: const TextStyle(color: Colors.white),
         underline: Container(),
         items: [1, 2, 3]
             .map((int count) => DropdownMenuItem<int>(
@@ -156,8 +158,6 @@ class _AreaConverterScreenState extends State<AreaConverterScreen> {
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
-              dropdownColor: Colors.grey[900],
-              style: const TextStyle(color: Colors.white),
               underline: Container(),
               items: _units
                   .map((unit) =>
@@ -171,36 +171,33 @@ class _AreaConverterScreenState extends State<AreaConverterScreen> {
     );
   }
 
-  Widget _buildResultBox(String result, String unit) {
+  Widget _buildResultBox(String result, String unit, Color cardColor, Color? textColor) {
     return Container(
       padding: const EdgeInsets.all(8),
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.1),
+        color: cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.deepPurple.shade400),
       ),
       child: Column(
         children: [
           Text(result.isNotEmpty ? '$result $unit' : '0',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold)),
+              style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
+  InputDecoration _inputDecoration(String label, IconData icon, ThemeData theme) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: TextStyle(color: theme.textTheme.bodyLarge?.color),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.deepPurple.shade400),
+        borderSide: BorderSide(color: theme.primaryColor),
         borderRadius: BorderRadius.circular(8),
       ),
-      prefixIcon: Icon(icon, color: Colors.deepPurple),
+      prefixIcon: Icon(icon, color: theme.primaryColor),
     );
   }
 

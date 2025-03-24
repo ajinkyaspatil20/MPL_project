@@ -3,62 +3,37 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Add a calculation to history
-  Future<void> addCalculationToHistory({
-    required String calculationType,
-    required String expression,
-    required String result,
-  }) async {
-    try {
-      await _firestore.collection('calculations').add({
-        'type': calculationType,
-        'expression': expression,
-        'result': result,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print('Error adding calculation to history: $e');
-      rethrow;
-    }
-  }
-
-  // Get all calculations history
-  Stream<QuerySnapshot> getCalculationsHistory() {
-    return _firestore
-        .collection('calculations')
-        .orderBy('timestamp', descending: true)
-        .snapshots();
-  }
-
-  // Get calculations history by type
-  Stream<QuerySnapshot> getCalculationsByType(String type) {
-    return _firestore
-        .collection('calculations')
-        .where('type', isEqualTo: type)
-        .orderBy('timestamp', descending: true)
-        .snapshots();
-  }
-
-  // Delete a calculation from history
-  Future<void> deleteCalculation(String calculationId) async {
-    try {
-      await _firestore.collection('calculations').doc(calculationId).delete();
-    } catch (e) {
-      print('Error deleting calculation: $e');
-      rethrow;
-    }
+  // Add calculation history
+  Future<void> addCalculationToHistory(String expression, String result) async {
+    await _firestore.collection('calculations').add({
+      'expression': expression,
+      'result': result,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   // Clear all history
   Future<void> clearAllHistory() async {
-    try {
-      var snapshots = await _firestore.collection('calculations').get();
-      for (var doc in snapshots.docs) {
-        await doc.reference.delete();
-      }
-    } catch (e) {
-      print('Error clearing history: $e');
-      rethrow;
+    var batch = _firestore.batch();
+    var snapshots = await _firestore.collection('calculations').get();
+    for (var doc in snapshots.docs) {
+      batch.delete(doc.reference);
     }
+    await batch.commit();
+  }
+
+  // Get calculations history
+  Stream<List<Map<String, dynamic>>> getCalculationsHistory() {
+    return _firestore
+        .collection('calculations')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  // Delete a specific calculation
+  Future<void> deleteCalculation(String id) async {
+    await _firestore.collection('calculations').doc(id).delete();
   }
 }

@@ -67,10 +67,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
           // Add to Firebase history
           _firebaseService.addCalculationToHistory(
-            calculationType: 'Currency Conversion',
-            expression: '$amount $fromCurrency to $toCurrency',
-            result: '${convertedAmount.toStringAsFixed(2)} $toCurrency',
+            '$amount $fromCurrency to $toCurrency', // Pass the history entry as the expression
+            '${convertedAmount.toStringAsFixed(2)} $toCurrency', // Pass the result
           );
+
         } else {
           throw Exception("Invalid response structure from the API.");
         }
@@ -93,12 +93,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Currency Converter",
-            style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.deepPurple,
+        title: Text("Currency Converter"),
       ),
       body: Container(
-        color: Colors.black,
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -109,27 +106,18 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               child: TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(color: Colors.white),
+                style: Theme.of(context).textTheme.bodyMedium,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.black,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                   labelText: "Enter Amount",
-                  labelStyle: const TextStyle(color: Colors.white),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        BorderSide(color: Colors.purple.shade200, width: 2),
-                  ),
-                  prefixIcon:
-                      const Icon(Icons.attach_money, color: Colors.white),
+                  labelStyle: Theme.of(context).inputDecorationTheme.labelStyle,
+                  border: Theme.of(context).inputDecorationTheme.border,
+                  enabledBorder:
+                      Theme.of(context).inputDecorationTheme.enabledBorder,
+                  focusedBorder:
+                      Theme.of(context).inputDecorationTheme.focusedBorder,
+                  prefixIcon: Icon(Icons.attach_money),
                 ),
               ),
             ),
@@ -143,16 +131,21 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: Theme.of(context).inputDecorationTheme.fillColor,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(
+                          color: Theme.of(context).primaryColor, width: 1),
                     ),
                     child: DropdownButton<String>(
                       value: fromCurrency,
-                      dropdownColor: Colors.black87,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                      icon: const Icon(Icons.arrow_drop_down,
-                          color: Colors.white),
+                      dropdownColor:
+                          Theme.of(context).inputDecorationTheme.fillColor,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontSize: 16),
+                      icon: Icon(Icons.arrow_drop_down,
+                          color: Theme.of(context).iconTheme.color),
                       isExpanded: true,
                       underline: Container(),
                       onChanged: (value) {
@@ -171,9 +164,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 ),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_forward,
-                    color: Colors.white,
+                    color: Theme.of(context).iconTheme.color,
                     size: 24,
                   ),
                 ),
@@ -183,16 +176,21 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: Theme.of(context).inputDecorationTheme.fillColor,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(
+                          color: Theme.of(context).primaryColor, width: 1),
                     ),
                     child: DropdownButton<String>(
                       value: toCurrency,
-                      dropdownColor: Colors.black87,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                      icon: const Icon(Icons.arrow_drop_down,
-                          color: Colors.white),
+                      dropdownColor:
+                          Theme.of(context).inputDecorationTheme.fillColor,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontSize: 16),
+                      icon: Icon(Icons.arrow_drop_down,
+                          color: Theme.of(context).iconTheme.color),
                       isExpanded: true,
                       underline: Container(),
                       onChanged: (value) {
@@ -219,20 +217,22 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               child: ElevatedButton(
                 onPressed: isLoading ? null : convertCurrency,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Colors.white, width: 2),
                   ),
                 ),
                 child: isLoading
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ? CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.onPrimary),
                       )
-                    : const Text(
+                    : Text(
                         "Convert",
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
                       ),
               ),
             ),
@@ -242,23 +242,24 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               margin: const EdgeInsets.symmetric(vertical: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white, width: 2),
+                border:
+                    Border.all(color: Theme.of(context).primaryColor, width: 1),
               ),
               child: Column(
                 children: [
                   Text(
                     "${amountController.text.isEmpty ? '0.00' : amountController.text} $fromCurrency = ",
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "${convertedAmount.toStringAsFixed(2)} $toCurrency",
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
                   ),
                 ],
               ),

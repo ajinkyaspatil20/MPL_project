@@ -1,30 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 import 'loan_emi_calculator.dart';
 import 'time_unit_calculator.dart';
 import 'currency_converter.dart';
-import 'unit_converter.dart'; // ✅ Import Unit Converter Screen
-import 'date_calculation.dart'; // ✅ Import Date Calculation Screen
+import 'unit_converter.dart';
+import 'date_calculation.dart';
+import 'formulas.dart';
 
 class AllCalculatorsScreen extends StatelessWidget {
   const AllCalculatorsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text("All Calculators"),
-        backgroundColor: Colors.grey[900],
+        backgroundColor: theme.appBarTheme.backgroundColor,
       ),
-      backgroundColor: Colors.black,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: GridView.count(
         padding: EdgeInsets.all(12),
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
         children: [
-          _buildCalculatorButton(context, "Calculator",
-              FontAwesomeIcons.calculator, Colors.orange),
+          _buildCalculatorButton(
+              context, "Formulas", FontAwesomeIcons.calculator, Colors.orange),
           _buildCalculatorButton(context, "Time Converter & Calculations",
               FontAwesomeIcons.clock, Colors.green),
           _buildCalculatorButton(context, "Currency Converter",
@@ -42,6 +46,7 @@ class AllCalculatorsScreen extends StatelessWidget {
 
   Widget _buildCalculatorButton(
       BuildContext context, String label, IconData icon, Color color) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: () {
         print("$label button tapped!"); // 🔍 Debugging Print
@@ -64,27 +69,36 @@ class AllCalculatorsScreen extends StatelessWidget {
         } else if (label == "Date Calculations") {
           Navigator.push(context,
               MaterialPageRoute(builder: (context) => DateCalculationScreen()));
-        } else if (label == "Calculator") {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("$label is in working state"),
-            duration: Duration(seconds: 2),
-          ));
+        } else if (label == "Formulas") {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => FormulasScreen()));
         }
       },
       child: Container(
         decoration: BoxDecoration(
-          color: color,
+          color: color.withOpacity(0.8),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: theme.shadowColor.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         padding: EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(icon, size: 40, color: Colors.white),
+            FaIcon(icon, size: 40, color: theme.colorScheme.onPrimary),
             SizedBox(height: 10),
             Text(label,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 16)),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.w500,
+                )),
           ],
         ),
       ),

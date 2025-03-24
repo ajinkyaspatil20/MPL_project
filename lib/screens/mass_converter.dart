@@ -52,10 +52,10 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
         historyEntry += ', $_result3 $_toUnit3';
       }
       _firebaseService.addCalculationToHistory(
-        calculationType: 'Mass Conversion',
-        expression: historyEntry,
-        result: '${_result1} $_toUnit1',
+        '$inputValue $_fromUnit = $_result1 $_toUnit1', // Pass the history entry as the expression
+        '${_result1} $_toUnit1', // Pass the result
       );
+
     } catch (e) {
       setState(() {
         _result1 = 'Invalid input';
@@ -65,50 +65,53 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Mass Converter'),
-          backgroundColor: Colors.deepPurple),
-      backgroundColor: Colors.black,
+        title: const Text('Mass Converter'),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+      ),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildDropdownUnitCount(),
+            _buildDropdownUnitCount(theme),
             const SizedBox(height: 20),
             TextField(
               controller: _inputController,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration:
-                  _inputDecoration('Enter Mass', FontAwesomeIcons.weight),
+              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+              decoration: _inputDecoration(
+                  'Enter Mass', FontAwesomeIcons.weight, theme),
             ),
             const SizedBox(height: 10),
             _buildDropdownRow('From', _fromUnit, (value) {
               setState(() {
                 _fromUnit = value!;
               });
-            }),
+            }, theme),
             const SizedBox(height: 10),
             _buildDropdownRow('To', _toUnit1, (value) {
               setState(() {
                 _toUnit1 = value!;
               });
-            }),
+            }, theme),
             if (_unitCount >= 2)
               _buildDropdownRow('Second To', _toUnit2,
-                  (value) => setState(() => _toUnit2 = value!)),
+                  (value) => setState(() => _toUnit2 = value!), theme),
             if (_unitCount == 3)
               _buildDropdownRow('Third To', _toUnit3,
-                  (value) => setState(() => _toUnit3 = value!)),
+                  (value) => setState(() => _toUnit3 = value!), theme),
             const SizedBox(height: 20),
             ElevatedButton(onPressed: _convert, child: const Text('Convert')),
             Expanded(
               child: ListView(
                 children: [
-                  _buildResultBox(_result1, _toUnit1),
-                  if (_unitCount >= 2) _buildResultBox(_result2, _toUnit2),
-                  if (_unitCount == 3) _buildResultBox(_result3, _toUnit3),
+                  _buildResultBox(_result1, _toUnit1, theme),
+                  if (_unitCount >= 2) _buildResultBox(_result2, _toUnit2, theme),
+                  if (_unitCount == 3) _buildResultBox(_result3, _toUnit3, theme),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -119,15 +122,15 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
     );
   }
 
-  Widget _buildDropdownUnitCount() {
+  Widget _buildDropdownUnitCount(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: _dropdownBoxDecoration(),
+      decoration: _dropdownBoxDecoration(theme),
       child: DropdownButton<int>(
         value: _unitCount,
         isExpanded: true,
-        dropdownColor: Colors.grey[900],
-        style: const TextStyle(color: Colors.white),
+        dropdownColor: theme.cardColor,
+        style: TextStyle(color: theme.textTheme.bodyLarge?.color),
         underline: Container(),
         items: [1, 2, 3]
             .map((int count) => DropdownMenuItem<int>(
@@ -139,18 +142,18 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
   }
 
   Widget _buildDropdownRow(
-      String label, String value, Function(String?) onChanged) {
+      String label, String value, Function(String?) onChanged, ThemeData theme) {
     return Row(
       children: [
         Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: _dropdownBoxDecoration(),
+            decoration: _dropdownBoxDecoration(theme),
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
-              dropdownColor: Colors.grey[900],
-              style: const TextStyle(color: Colors.white),
+              dropdownColor: theme.cardColor,
+              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
               underline: Container(),
               items: _units
                   .map((unit) =>
@@ -164,20 +167,20 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
     );
   }
 
-  Widget _buildResultBox(String result, String unit) {
+  Widget _buildResultBox(String result, String unit, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(8),
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.1),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.deepPurple.shade400),
+        border: Border.all(color: theme.primaryColor),
       ),
       child: Column(
         children: [
           Text(result.isNotEmpty ? '$result $unit' : '0',
-              style: const TextStyle(
-                  color: Colors.white,
+              style: TextStyle(
+                  color: theme.textTheme.bodyLarge?.color,
                   fontSize: 14,
                   fontWeight: FontWeight.bold)),
         ],
@@ -185,21 +188,22 @@ class _MassConverterScreenState extends State<MassConverterScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
+  InputDecoration _inputDecoration(String label, IconData icon, ThemeData theme) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.deepPurple.shade400),
+        borderSide: BorderSide(color: theme.primaryColor),
         borderRadius: BorderRadius.circular(8),
       ),
-      prefixIcon: Icon(icon, color: Colors.deepPurple),
+      prefixIcon: Icon(icon, color: theme.primaryColor),
     );
   }
 
-  BoxDecoration _dropdownBoxDecoration() {
+  BoxDecoration _dropdownBoxDecoration(ThemeData theme) {
     return BoxDecoration(
-        border: Border.all(color: Colors.deepPurple.shade400),
-        borderRadius: BorderRadius.circular(8));
+      border: Border.all(color: theme.primaryColor),
+      borderRadius: BorderRadius.circular(8),
+    );
   }
 }

@@ -3,102 +3,175 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'package:mpl_lab/screens/all_calculations_screen.dart';
 import 'dart:math';
-// import 'screens/all_calculations_screen.dart';
 import 'settings_screen.dart';
+import '../services/firebase_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _CalculatorScreenState createState() => _CalculatorScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  bool isScientific = false;
-  bool isDegreeMode = true;
-  String expression = "";
-  String result = "";
+class _CalculatorScreenState extends State<HomeScreen> {
+  String _expression = '';
+  String _result = '';
+  bool _isScientific = false;
+  bool _isDegreeMode = true;
+  final double _buttonSize = 80.0;
+  final FirebaseService _firebaseService = FirebaseService();
 
-  void onButtonPressed(String value) {
+  void _onButtonPressed(String buttonText) {
     setState(() {
-      if (value == "C") {
-        expression = "";
-        result = "";
-      } else if (value == "=") {
-        try {
-          result = evaluateExpression(expression);
-        } catch (e) {
-          result = "Error";
+      if (buttonText == 'C') {
+        _expression = '';
+        _result = '';
+      } else if (buttonText == '⌫') {
+        if (_expression.isNotEmpty) {
+          _expression = _expression.substring(0, _expression.length - 1);
         }
-      } else if (value == "Deg/Rad") {
-        isDegreeMode = !isDegreeMode;
+      } else if (buttonText == '=') {
+        try {
+          _result = _evaluateExpression(_expression);
+          if (_result != 'Error') {
+            _firebaseService.addCalculationToHistory(_expression, _result);
+          }
+        } catch (e) {
+          _result = 'Error';
+        }
+      } else if (buttonText == 'DEG/RAD') {
+        _isDegreeMode = !_isDegreeMode;
       } else {
-        expression += value;
+        _expression += buttonText;
       }
     });
   }
 
-  String evaluateExpression(String expr) {
+  String _evaluateExpression(String expr) {
     try {
-      Parser parser = Parser();
+      expr = expr.replaceAll('×', '*').replaceAll('÷', '/');
+
+      // Handle degree conversion if in degree mode
+      if (_isDegreeMode) {
+        expr =
+            expr.replaceAllMapped(RegExp(r'(sin|cos|tan)\(([^)]+)\)'), (match) {
+          String trigFunc = match.group(1)!;
+          double value = double.parse(match.group(2)!);
+          return '$trigFunc(${value * pi / 180})';
+        });
+      }
+
+      // Handle scientific functions
+      expr = expr.replaceAllMapped(
+          RegExp(
+              r'(sinh|cosh|tanh|log10|ln|√|exp|abs|asin|acos|atan|fact)\(([^)]+)\)'),
+          (match) {
+        String func = match.group(1)!;
+        double value = double.parse(match.group(2)!);
+
+        switch (func) {
+          case 'sinh':
+            return '((exp($value)-exp(-$value))/2)';
+          case 'cosh':
+            return '((exp($value)+exp(-$value))/2)';
+          case 'tanh':
+            return '((exp(2*$value)-1)/(exp(2*$value)+1))';
+          case 'log10':
+            return '(log($value)/ln10)';
+          case 'ln':
+            return '(log($value))';
+          case '√':
+            return '(sqrt($value))';
+          case 'exp':
+            return '(exp($value))';
+          case 'abs':
+            return '(abs($value))';
+          case 'asin':
+            return _isDegreeMode ? '(asin($value)*180/pi)' : '(asin($value))';
+          case 'acos':
+            return _isDegreeMode ? '(acos($value)*180/pi)' : '(acos($value))';
+          case 'atan':
+            return _isDegreeMode ? '(atan($value)*180/pi)' : '(atan($value))';
+          case 'fact':
+            return '(${_factorial(value.toInt())}.0)';
+          default:
+            return match.group(0)!;
+        }
+      });
+
+      // Handle factorial operator
+      expr = expr.replaceAllMapped(RegExp(r'(\d+)!'), (match) {
+        return 'fact(${match.group(1)!})';
+      });
+
+      Parser p = Parser();
+      Expression exp = p.parse(expr);
       ContextModel cm = ContextModel();
 
-      expr = expr.replaceAllMapped(
-          RegExp(r'(sin|cos|tan|sinh|cosh|tanh)\(([^)]+)\)'), (match) {
-        String function = match.group(1)!;
-        String value = match.group(2)!;
-        if (isDegreeMode) {
-          return '$function(${double.parse(value) * (pi / 180)})';
-        }
-        return match.group(0)!;
-      });
+      double evalResult = exp.evaluate(EvaluationType.REAL, cm);
 
-      expr = expr.replaceAllMapped(RegExp(r'ln\(([^)]+)\)'), (match) {
-        double value = double.parse(match.group(1)!);
-        return value > 0 ? log(value).toString() : "Error";
-      });
-
-      expr = expr.replaceAllMapped(RegExp(r'log10\(([^)]+)\)'), (match) {
-        double value = double.parse(match.group(1)!);
-        return value > 0 ? (log(value) / log(10)).toString() : "Error";
-      });
-
-      expr = expr.replaceAllMapped(RegExp(r'(\d+)!'), (match) {
-        int num = int.parse(match.group(1)!);
-        return factorial(num).toString();
-      });
-
-      Expression parsedExpression = parser.parse(expr);
-      double evalResult = parsedExpression.evaluate(EvaluationType.REAL, cm);
-      return evalResult.toString();
+      // Format result
+      if (evalResult % 1 == 0) {
+        return evalResult.toInt().toString();
+      } else {
+        return evalResult
+            .toStringAsFixed(6)
+            .replaceAll(RegExp(r'0+$'), '')
+            .replaceAll(r'.$', '');
+      }
     } catch (e) {
-      return "Error";
+      return 'Error';
     }
   }
 
-  int factorial(int n) {
-    if (n < 0) return -1;
-    return (n == 0 || n == 1) ? 1 : n * factorial(n - 1);
-  }
+  int _factorial(int n) => n <= 1 ? 1 : n * _factorial(n - 1);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF252525),
-        title: Center(child: Text(
-            "Smart Calculator", style: TextStyle(color: Colors.white))),
+        title: Text('Scientific Calculator'),
+        actions: [
+          IconButton(
+            icon: Icon(_isScientific ? Icons.calculate : Icons.science),
+            onPressed: () {
+              setState(() {
+                _isScientific = !_isScientific;
+              });
+            },
+          ),
+        ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildNavBar(), // NAVIGATION BAR MOVED TO THE TOP
-            _buildDisplay(),
-            _buildToggleButtons(),
-            Expanded(child: _buildButtonGrid()),
-          ],
-        ),
+      body: Column(
+        children: [
+          _buildNavBar(), // NAVIGATION BAR MOVED TO THE TOP
+          // Display
+          Container(
+            padding: EdgeInsets.all(20),
+            alignment: Alignment.centerRight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _expression,
+                  style: TextStyle(fontSize: 24),
+                ),
+                Text(
+                  _result,
+                  style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  _isDegreeMode ? 'DEG' : 'RAD',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          // Buttons
+          Expanded(
+            child: _isScientific
+                ? _buildScientificButtons()
+                : _buildBasicButtons(),
+          ),
+        ],
       ),
     );
   }
@@ -110,11 +183,16 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _navBarButton("Home", FontAwesomeIcons.home, () {}),
+          _navBarButton("Home", FontAwesomeIcons.home, () {
+            // Navigate to Home
+            Navigator.popUntil(context, (route) => route.isFirst);
+          }),
           SizedBox(width: 15),
           _navBarButton("All", FontAwesomeIcons.list, () {
-            Navigator.push(context, MaterialPageRoute(
-                builder: (context) => AllCalculatorsScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => AllCalculatorsScreen()));
           }),
           SizedBox(width: 15),
           _navBarButton("Settings", FontAwesomeIcons.cog, () {
@@ -136,114 +214,106 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDisplay() {
-    return Container(
-      height: 100,
-      width: double.infinity,
-      padding: EdgeInsets.all(12),
-      alignment: Alignment.centerRight,
-      decoration: BoxDecoration(
-        color: Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(expression, style: TextStyle(fontSize: 22, color: Colors.white)),
-          SizedBox(height: 5),
-          Text(result, style: TextStyle(
-              fontSize: 26, fontWeight: FontWeight.bold, color: Colors.orange)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToggleButtons() {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _toggleButton("Basic Mode", "Scientific Mode", isScientific, () {
-            setState(() {
-              isScientific = !isScientific;
-            });
-          }),
-          _toggleButton("Degree Mode", "Radian Mode", isDegreeMode, () {
-            onButtonPressed("Deg/Rad");
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _toggleButton(String offLabel, String onLabel, bool isActive,
-      VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        decoration: BoxDecoration(color: isActive ? Colors.teal : Colors.blue,
-            borderRadius: BorderRadius.circular(6)),
-        child: Text(isActive ? onLabel : offLabel,
-            style: TextStyle(color: Colors.white, fontSize: 14)),
-      ),
-    );
-  }
-
-  Widget _buildButtonGrid() {
-    List<String> basicButtons = [
-      "7", "8", "9", "C", "4", "5", "6", "/", "1", "2", "3", "*",
-      "0", ".", "=", "+", "-", "(", ")", "%"
-    ];
-    List<String> scientificButtons = [
-      "sin", "cos", "tan", "sinh", "cosh", "tanh",
-      "log10", "ln", "√", "π", "^", "!"
+  Widget _buildBasicButtons() {
+    List<List<String>> buttonMatrix = [
+      ['C', '÷', '×', '⌫'],
+      ['7', '8', '9', '-'],
+      ['4', '5', '6', '+'],
+      ['1', '2', '3', '='],
+      ['(', '0', ')', '.'],
     ];
 
-    List<String> buttons = isScientific
-        ? scientificButtons + basicButtons
-        : basicButtons;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: AlwaysScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: isScientific ? 5 : 4,
-          childAspectRatio: 1.1,
-          crossAxisSpacing: 3,
-          mainAxisSpacing: 3,
-        ),
-        itemCount: buttons.length,
-        itemBuilder: (context, index) {
-          return _buildButton(buttons[index]);
-        },
+    return GridView.builder(
+      padding: EdgeInsets.all(8),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        childAspectRatio: 1,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
       ),
+      itemCount: 20,
+      itemBuilder: (context, index) {
+        int row = index ~/ 4;
+        int col = index % 4;
+        String buttonText = buttonMatrix[row][col];
+
+        return _buildButton(buttonText);
+      },
     );
   }
 
-  Widget _buildButton(String value) {
-    Color buttonColor = Colors.grey[900]!;
-    Color textColor = Colors.white;
+  Widget _buildScientificButtons() {
+    List<List<String>> buttonMatrix = [
+      ['C', '÷', '×', '⌫', 'DEG/RAD'],
+      ['7', '8', '9', '-', 'sin'],
+      ['4', '5', '6', '+', 'cos'],
+      ['1', '2', '3', '=', 'tan'],
+      ['(', '0', ')', '.', '√'],
+      ['sinh', 'cosh', 'tanh', '^', 'log10'],
+      ['exp', 'ln', 'abs', '!', 'π'],
+      ['asin', 'acos', 'atan', '(', ')'],
+    ];
 
-    if (value == "C") {
-      buttonColor = Colors.red;
-    } else if (value == "=") {
-      buttonColor = Colors.green[600]!;
+    return GridView.builder(
+      padding: EdgeInsets.all(8),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 5,
+        childAspectRatio: 1,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      ),
+      itemCount: 40,
+      itemBuilder: (context, index) {
+        int row = index ~/ 5;
+        int col = index % 5;
+
+        if (row < buttonMatrix.length && col < buttonMatrix[row].length) {
+          return _buildButton(buttonMatrix[row][col]);
+        } else {
+          return Container(); // Empty container for unused grid cells
+        }
+      },
+    );
+  }
+
+  Widget _buildButton(String buttonText) {
+    Color buttonColor;
+    Color textColor = Colors.black;
+
+    if (buttonText == 'C') {
+      buttonColor = Colors.red[400]!;
+      textColor = Colors.white;
+    } else if (buttonText == '=') {
+      buttonColor = Colors.blue[400]!;
+      textColor = Colors.white;
+    } else if (buttonText == '⌫') {
+      buttonColor = Colors.orange[400]!;
+      textColor = Colors.white;
+    } else if (['÷', '×', '-', '+', '^', 'DEG/RAD'].contains(buttonText)) {
+      buttonColor = Colors.blueGrey[200]!;
+    } else if (RegExp(r'[0-9.]').hasMatch(buttonText)) {
+      buttonColor = Colors.grey[200]!;
+    } else {
+      buttonColor = Colors.grey[300]!;
     }
 
-    return GestureDetector(
-      onTap: () => onButtonPressed(value),
-      child: Container(
-        decoration: BoxDecoration(
-            color: buttonColor, borderRadius: BorderRadius.circular(4)),
-        alignment: Alignment.center,
-        padding: EdgeInsets.all(8),
-        child: Text(value, style: TextStyle(
-            fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+    return SizedBox(
+      width: _buttonSize,
+      height: _buttonSize,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: buttonColor,
+          foregroundColor: textColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        onPressed: () => _onButtonPressed(buttonText),
+        child: Text(
+          buttonText,
+          style: TextStyle(fontSize: 24),
+        ),
       ),
     );
   }

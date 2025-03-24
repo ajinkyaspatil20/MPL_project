@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../services/firebase_service.dart';
 
 class LengthConverterScreen extends StatefulWidget {
   const LengthConverterScreen({super.key});
@@ -12,25 +11,19 @@ class LengthConverterScreen extends StatefulWidget {
 class _LengthConverterScreenState extends State<LengthConverterScreen> {
   final TextEditingController _inputController = TextEditingController();
   String _fromUnit = 'Meters';
-  String _toUnit1 = 'Kilometers';
-  String _toUnit2 = 'Miles';
-  String _toUnit3 = 'Feet';
-  int _unitCount = 1;
-  String _result1 = '', _result2 = '', _result3 = '';
+  int _outputCount = 1;
+  List<String> _toUnits = ['Kilometers', 'Centimeters', 'Inches'];
+  List<String> _results = ['', '', ''];
 
-  final List<String> _units = [
-    'Meters',
-    'Kilometers',
-    'Miles',
-    'Feet'
-  ]; 
-  final FirebaseService _firebaseService = FirebaseService(); 
+  final List<String> _units = ['Meters', 'Kilometers', 'Centimeters', 'Inches', 'Feet', 'Miles'];
 
   final Map<String, double> _toMeters = {
     'Meters': 1,
     'Kilometers': 1000,
-    'Miles': 1609.34,
+    'Centimeters': 0.01,
+    'Inches': 0.0254,
     'Feet': 0.3048,
+    'Miles': 1609.34,
   };
 
   void _convert() {
@@ -38,175 +31,104 @@ class _LengthConverterScreenState extends State<LengthConverterScreen> {
     try {
       double inputValue = double.parse(_inputController.text);
       double inMeters = inputValue * _toMeters[_fromUnit]!;
+
       setState(() {
-        _result1 =
-            (inMeters / _toMeters[_toUnit1]!).toStringAsFixed(6);
-        _result2 = _unitCount >= 2
-            ? (inMeters / _toMeters[_toUnit2]!).toStringAsFixed(6)
-            : '';
-        _result3 = _unitCount == 3
-            ? (inMeters / _toMeters[_toUnit3]!).toStringAsFixed(6)
-            : '';
+        for (int i = 0; i < _outputCount; i++) {
+          _results[i] = (inMeters / _toMeters[_toUnits[i]]!).toStringAsFixed(6);
+        }
       });
-
-      // Add to Firebase history
-      String historyEntry = '$inputValue $_fromUnit = $_result1 $_toUnit1';
-      if (_unitCount >= 2 && _result2.isNotEmpty) {
-        historyEntry += ', $_result2 $_toUnit2';
-      }
-      if (_unitCount == 3 && _result3.isNotEmpty) {
-        historyEntry += ', $_result3 $_toUnit3';
-      }
-      _firebaseService.addCalculationToHistory(
-        calculationType: 'Length Conversion',
-        expression: historyEntry,
-        result: '${_result1} $_toUnit1',
-      );
-
     } catch (e) {
       setState(() {
-        _result1 = 'Invalid input';
+        _results = List.filled(3, 'Invalid input');
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    var theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-          title: const Text('Length Converter'),
-          backgroundColor: Colors.deepPurple),
-      backgroundColor: Colors.black,
+      appBar: AppBar(title: const Text('Length Converter')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDropdownUnitCount(),
-            const SizedBox(height: 20),
             TextField(
               controller: _inputController,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration:
-                  _inputDecoration('Enter Length', FontAwesomeIcons.ruler),
+              decoration: _inputDecoration('Enter Length', FontAwesomeIcons.ruler, theme),
             ),
             const SizedBox(height: 10),
-            _buildDropdownRow('From', _fromUnit, (value) {
-              setState(() {
-                _fromUnit = value!;
-              });
-            }),
+            _buildDropdownRow('From', _fromUnit, (value) => setState(() => _fromUnit = value!)),
             const SizedBox(height: 10),
-            _buildDropdownRow('To', _toUnit1, (value) {
-              setState(() {
-                _toUnit1 = value!;
-              });
-            }),
-            if (_unitCount >= 2)
-              _buildDropdownRow('Second To', _toUnit2,
-                  (value) => setState(() => _toUnit2 = value!)),
-            if (_unitCount == 3)
-              _buildDropdownRow('Third To', _toUnit3,
-                  (value) => setState(() => _toUnit3 = value!)),
-            const SizedBox(height: 20),
-            ElevatedButton(onPressed: _convert, child: const Text('Convert')),
-            Expanded(
-              child: ListView(
+            _buildOutputCountSelector(),
+            const SizedBox(height: 10),
+            for (int i = 0; i < _outputCount; i++)
+              Column(
                 children: [
-                  _buildResultBox(_result1, _toUnit1),
-                  if (_unitCount >= 2) _buildResultBox(_result2, _toUnit2),
-                  if (_unitCount == 3) _buildResultBox(_result3, _toUnit3),
-                  const SizedBox(height: 20),
+                  _buildDropdownRow('To ${i + 1}', _toUnits[i], (value) => setState(() => _toUnits[i] = value!)),
+                  const SizedBox(height: 10),
                 ],
               ),
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: _convert,
+                child: const Text('Convert'),
+              ),
             ),
+            const SizedBox(height: 20),
+            for (int i = 0; i < _outputCount; i++) _buildResultBox(_results[i], _toUnits[i]),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDropdownUnitCount() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: _dropdownBoxDecoration(),
-      child: DropdownButton<int>(
-        value: _unitCount,
-        isExpanded: true,
-        dropdownColor: Colors.grey[900],
-        style: const TextStyle(color: Colors.white),
-        underline: Container(),
-        items: [1, 2, 3]
-            .map((int count) => DropdownMenuItem<int>(
-                value: count, child: Text('$count Units')))
-            .toList(),
-        onChanged: (value) => setState(() => _unitCount = value!),
-      ),
-    );
-  }
-
-  Widget _buildDropdownRow(
-      String label, String value, Function(String?) onChanged) {
+  Widget _buildDropdownRow(String label, String value, Function(String?) onChanged) {
     return Row(
       children: [
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: _dropdownBoxDecoration(),
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              dropdownColor: Colors.grey[900],
-              style: const TextStyle(color: Colors.white),
-              underline: Container(),
-              items: _units
-                  .map((unit) =>
-                      DropdownMenuItem<String>(value: unit, child: Text(unit)))
-                  .toList(),
-              onChanged: onChanged,
-            ),
+          child: DropdownButtonFormField<String>(
+            value: value,
+            decoration: InputDecoration(labelText: label),
+            items: _units.map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
+            onChanged: onChanged,
           ),
         ),
       ],
     );
   }
 
+  Widget _buildOutputCountSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text('Number of Outputs'),
+        DropdownButton<int>(
+          value: _outputCount,
+          items: [1, 2, 3].map((e) => DropdownMenuItem(value: e, child: Text(e.toString()))).toList(),
+          onChanged: (value) => setState(() => _outputCount = value!),
+        ),
+      ],
+    );
+  }
+
   Widget _buildResultBox(String result, String unit) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.deepPurple.shade400),
-      ),
-      child: Column(
-        children: [
-          Text(result.isNotEmpty ? '$result $unit' : '0',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold)),
-        ],
+    return Center(
+      child: Text(
+        result.isNotEmpty ? '$result $unit' : '0',
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
+  InputDecoration _inputDecoration(String label, IconData icon, ThemeData theme) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
-      enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.deepPurple.shade400),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      prefixIcon: Icon(icon, color: Colors.deepPurple),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      prefixIcon: Icon(icon),
     );
-  }
-
-  BoxDecoration _dropdownBoxDecoration() {
-    return BoxDecoration(
-        border: Border.all(color: Colors.deepPurple.shade400),
-        borderRadius: BorderRadius.circular(8));
   }
 }

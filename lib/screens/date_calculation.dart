@@ -38,19 +38,6 @@ class _DateCalculationScreenState extends State<DateCalculationScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: Colors.teal,
-              onPrimary: Colors.white,
-              surface: Colors.grey[900]!,
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
@@ -67,24 +54,20 @@ class _DateCalculationScreenState extends State<DateCalculationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Date Calculations",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-        ),
-        backgroundColor: Colors.teal[900],
-        elevation: 6.0,
-        shadowColor: Colors.teal[300],
+        title: const Text("Date Calculations"),
       ),
-      backgroundColor: Colors.black,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Card(
-              color: Colors.grey[900],
+              color: theme.cardColor,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -93,7 +76,7 @@ class _DateCalculationScreenState extends State<DateCalculationScreen> {
                     Text(
                       'Calculate Days Between Dates',
                       style: TextStyle(
-                        color: Colors.teal[300],
+                        color: theme.primaryColor,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -103,72 +86,36 @@ class _DateCalculationScreenState extends State<DateCalculationScreen> {
                       'Start Date',
                       _startDate,
                       () => _selectDate(context, true),
+                      isDarkMode,
                     ),
                     const SizedBox(height: 16),
                     _buildDateButton(
                       'End Date',
                       _endDate,
                       () => _selectDate(context, false),
+                      isDarkMode,
                     ),
                     if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.only(top: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Colors.red,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ],
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(color: Colors.redAccent, fontSize: 16),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                    if (_daysDifference != null && _errorMessage == null) ...[
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.teal.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const FaIcon(
-                              FontAwesomeIcons.calendar,
-                              color: Colors.teal,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Difference: $_daysDifference days',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                    if (_daysDifference != null && _errorMessage == null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Text(
+                          'Time Difference: $_daysDifference days',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: theme.textTheme.bodyLarge!.color,
+                          ),
                         ),
                       ),
-                    ],
                   ],
                 ),
               ),
@@ -180,13 +127,13 @@ class _DateCalculationScreenState extends State<DateCalculationScreen> {
   }
 
   Widget _buildDateButton(
-      String label, DateTime? date, VoidCallback onPressed) {
+      String label, DateTime? date, VoidCallback onPressed, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87),
         ),
         const SizedBox(height: 8),
         InkWell(
@@ -196,6 +143,7 @@ class _DateCalculationScreenState extends State<DateCalculationScreen> {
             decoration: BoxDecoration(
               border: Border.all(color: Colors.teal),
               borderRadius: BorderRadius.circular(8),
+              color: isDarkMode ? Colors.black54 : Colors.white,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -203,7 +151,7 @@ class _DateCalculationScreenState extends State<DateCalculationScreen> {
                 Text(
                   date != null ? _dateFormat.format(date) : 'Select Date',
                   style: TextStyle(
-                    color: date != null ? Colors.white : Colors.white54,
+                    color: isDarkMode ? Colors.white : Colors.black,
                     fontSize: 16,
                   ),
                 ),

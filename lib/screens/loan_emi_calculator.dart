@@ -42,34 +42,35 @@ class _LoanEmiCalculatorState extends State<LoanEmiCalculator> {
 
     // Add to Firebase history
     _firebaseService.addCalculationToHistory(
-      calculationType: 'Loan EMI Calculation',
-      expression:
-          'Principal: ₹$P, Rate: $annualRate%, Tenure: $tenureMonths months',
-      result: 'EMI: ₹${emi.toStringAsFixed(2)}',
+      'Principal: ₹$P, Rate: $annualRate%, Tenure: $tenureMonths months', // Pass the history entry as the expression
+      'EMI: ₹${emi.toStringAsFixed(2)}', // Pass the result
     );
+
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Loan EMI Calculator",
+        title: Text(
+          'Loan EMI Calculator',
           style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onPrimary,
             fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.deepPurple,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          color: Colors.black,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.black, Color(0xFF1a1a1a)],
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              Theme.of(context).colorScheme.surface,
+            ],
           ),
         ),
         child: SingleChildScrollView(
@@ -93,10 +94,14 @@ class _LoanEmiCalculatorState extends State<LoanEmiCalculator> {
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.8),
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: Colors.deepPurple.withOpacity(0.5), width: 1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.5),
+                        width: 1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,22 +124,15 @@ class _LoanEmiCalculatorState extends State<LoanEmiCalculator> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: calculateEMI,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: const BorderSide(color: Colors.white, width: 2),
-                      ),
-                    ),
-                    icon: const Icon(FontAwesomeIcons.calculator,
-                        color: Colors.white),
-                    label: const Text(
+                    style: Theme.of(context).elevatedButtonTheme.style,
+                    icon: Icon(FontAwesomeIcons.calculator,
+                        color: Theme.of(context).colorScheme.onPrimary),
+                    label: Text(
                       "Calculate EMI",
-                      style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -146,8 +144,8 @@ class _LoanEmiCalculatorState extends State<LoanEmiCalculator> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.deepPurple.shade900,
-                        Colors.deepPurple.shade700
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.primary.withOpacity(0.8)
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,

@@ -6,7 +6,8 @@ class TemperatureConverterScreen extends StatefulWidget {
   const TemperatureConverterScreen({super.key});
 
   @override
-  State<TemperatureConverterScreen> createState() => _TemperatureConverterScreenState();
+  State<TemperatureConverterScreen> createState() =>
+      _TemperatureConverterScreenState();
 }
 
 class _TemperatureConverterScreenState extends State<TemperatureConverterScreen> {
@@ -14,15 +15,10 @@ class _TemperatureConverterScreenState extends State<TemperatureConverterScreen>
   String _fromUnit = 'Celsius';
   String _toUnit1 = 'Fahrenheit';
   String _toUnit2 = 'Kelvin';
-  int _unitCount = 2; // Set to 2 for results
   String _result1 = '', _result2 = '';
 
-  final List<String> _units = [
-    'Celsius',
-    'Fahrenheit',
-    'Kelvin'
-  ]; 
-  final FirebaseService _firebaseService = FirebaseService(); 
+  final List<String> _units = ['Celsius', 'Fahrenheit', 'Kelvin'];
+  final FirebaseService _firebaseService = FirebaseService();
 
   void _convert() {
     if (_inputController.text.isEmpty) return;
@@ -30,7 +26,6 @@ class _TemperatureConverterScreenState extends State<TemperatureConverterScreen>
       double inputValue = double.parse(_inputController.text);
       double inCelsius;
 
-      // Convert input to Celsius
       if (_fromUnit == 'Fahrenheit') {
         inCelsius = (inputValue - 32) * 5 / 9;
       } else if (_fromUnit == 'Kelvin') {
@@ -39,22 +34,34 @@ class _TemperatureConverterScreenState extends State<TemperatureConverterScreen>
         inCelsius = inputValue;
       }
 
+      double result1 = _toUnit1 == 'Celsius'
+          ? inCelsius
+          : _toUnit1 == 'Fahrenheit'
+              ? (inCelsius * 9 / 5 + 32)
+              : (inCelsius + 273.15);
+
+      double result2 = _toUnit2 == 'Celsius'
+          ? inCelsius
+          : _toUnit2 == 'Fahrenheit'
+              ? (inCelsius * 9 / 5 + 32)
+              : (inCelsius + 273.15);
+
       setState(() {
-        _result1 = (_fromUnit == 'Fahrenheit' ? (inCelsius * 9 / 5 + 32) : (_fromUnit == 'Kelvin' ? (inCelsius + 273.15) : inCelsius)).toStringAsFixed(2);
-        _result2 = (_fromUnit == 'Fahrenheit' ? (inCelsius + 273.15) : (_fromUnit == 'Kelvin' ? (inCelsius * 9 / 5 + 32) : (inCelsius + 273.15))).toStringAsFixed(2);
+        _result1 = result1.toStringAsFixed(2);
+        _result2 = result2.toStringAsFixed(2);
       });
 
-      // Add to Firebase history
-      String historyEntry = '$inputValue $_fromUnit = $_result1 $_toUnit1, $_result2 $_toUnit2';
+      String historyEntry =
+          '$inputValue $_fromUnit = $_result1 $_toUnit1, $_result2 $_toUnit2';
       _firebaseService.addCalculationToHistory(
-        calculationType: 'Temperature Conversion',
-        expression: historyEntry,
-        result: '${_result1} $_toUnit1',
+        '$inputValue $_fromUnit = $_result1 $_toUnit1, $_result2 $_toUnit2', // Pass the history entry as the expression
+        '${_result1} $_toUnit1', // Pass the result
       );
 
     } catch (e) {
       setState(() {
         _result1 = 'Invalid input';
+        _result2 = '';
       });
     }
   }
@@ -62,91 +69,77 @@ class _TemperatureConverterScreenState extends State<TemperatureConverterScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-          title: const Text('Temperature Converter'),
-          backgroundColor: Colors.deepPurple),
-      backgroundColor: Colors.black,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildDropdownUnitCount(),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _inputController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration:
-                  _inputDecoration('Enter Temperature', FontAwesomeIcons.thermometerHalf),
-            ),
-            const SizedBox(height: 10),
-            _buildDropdownRow('From', _fromUnit, (value) {
-              setState(() {
-                _fromUnit = value!;
-              });
-            }),
-            const SizedBox(height: 10),
-            _buildDropdownRow('To', _toUnit1, (value) {
-              setState(() {
-                _toUnit1 = value!;
-              });
-            }),
-            const SizedBox(height: 20),
-            ElevatedButton(onPressed: _convert, child: const Text('Convert')),
-            Expanded(
-              child: ListView(
-                children: [
-                  _buildResultBox(_result1, _toUnit1),
-                  if (_unitCount >= 2) _buildResultBox(_result2, _toUnit2),
-                  const SizedBox(height: 20),
-                ],
+      appBar: AppBar(title: const Text('Temperature Converter')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10),
+              TextField(
+                controller: _inputController,
+                keyboardType: TextInputType.number,
+                decoration: _inputDecoration(
+                    'Enter Temperature', FontAwesomeIcons.thermometerHalf),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              _buildDropdownRow('From', _fromUnit, (value) {
+                setState(() {
+                  _fromUnit = value!;
+                });
+              }),
+              const SizedBox(height: 20),
+              _buildDropdownRow('To', _toUnit1, (value) {
+                setState(() {
+                  _toUnit1 = value!;
+                });
+              }),
+              const SizedBox(height: 20),
+              _buildDropdownRow('To', _toUnit2, (value) {
+                setState(() {
+                  _toUnit2 = value!;
+                });
+              }),
+              const SizedBox(height: 30),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _convert,
+                  child: const Text('Convert'),
+                ),
+              ),
+              const SizedBox(height: 30),
+              _buildResultBox(_result1, _toUnit1),
+              const SizedBox(height: 10),
+              _buildResultBox(_result2, _toUnit2),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDropdownUnitCount() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: _dropdownBoxDecoration(),
-      child: DropdownButton<int>(
-        value: _unitCount,
-        isExpanded: true,
-        dropdownColor: Colors.grey[900],
-        style: const TextStyle(color: Colors.white),
-        underline: Container(),
-        items: [2] // Fixed to 2 for temperature conversion
-            .map((int count) => DropdownMenuItem<int>(
-                value: count, child: Text('$count Units')))
-            .toList(),
-        onChanged: (value) => setState(() => _unitCount = value!),
-      ),
-    );
-  }
-
-  Widget _buildDropdownRow(
-      String label, String value, Function(String?) onChanged) {
-    return Row(
+  Widget _buildDropdownRow(String label, String value, Function(String?) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: _dropdownBoxDecoration(),
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              dropdownColor: Colors.grey[900],
-              style: const TextStyle(color: Colors.white),
-              underline: Container(),
-              items: _units
-                  .map((unit) =>
-                      DropdownMenuItem<String>(value: unit, child: Text(unit)))
-                  .toList(),
-              onChanged: onChanged,
-            ),
+        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: _dropdownBoxDecoration(),
+          child: DropdownButton<String>(
+            value: value,
+            isExpanded: true,
+            dropdownColor: Colors.grey[900],
+            style: const TextStyle(color: Colors.white),
+            underline: Container(),
+            items: _units
+                .map((unit) =>
+                    DropdownMenuItem<String>(value: unit, child: Text(unit)))
+                .toList(),
+            onChanged: onChanged,
           ),
         ),
       ],
@@ -155,21 +148,19 @@ class _TemperatureConverterScreenState extends State<TemperatureConverterScreen>
 
   Widget _buildResultBox(String result, String unit) {
     return Container(
-      padding: const EdgeInsets.all(8),
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.deepPurple.shade400),
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
       ),
-      child: Column(
-        children: [
-          Text(result.isNotEmpty ? '$result $unit' : '0',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold)),
-        ],
+      child: Align(
+        alignment: Alignment.center,
+        child: Text(
+          result.isNotEmpty ? '$result $unit' : '0 $unit',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -177,18 +168,23 @@ class _TemperatureConverterScreenState extends State<TemperatureConverterScreen>
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: const TextStyle(color: Colors.black54),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.deepPurple.shade400),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.blueAccent),
       ),
-      prefixIcon: Icon(icon, color: Colors.deepPurple),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.blue, width: 2),
+      ),
+      prefixIcon: Icon(icon, color: Colors.blueAccent),
     );
   }
 
   BoxDecoration _dropdownBoxDecoration() {
     return BoxDecoration(
-        border: Border.all(color: Colors.deepPurple.shade400),
-        borderRadius: BorderRadius.circular(8));
+      border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
+      borderRadius: BorderRadius.circular(12),
+    );
   }
 }

@@ -43,6 +43,10 @@ dependencies:
   http: ^1.2.1  # ✅ Required for API calls (Currency Converter)
   image_picker: ^1.0.7
   intl: ^0.19.0  # ✅ Required for date formatting and calculations
+  provider: ^6.1.1  # ✅ Required for state management
+  shared_preferences: ^2.2.2  # ✅ Required for persistent storage
+
+
 
 dev_dependencies:
   flutter_test:

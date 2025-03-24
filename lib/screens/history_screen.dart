@@ -12,7 +12,6 @@ class HistoryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Calculation History'),
-        backgroundColor: Color(0xFF252525),
         actions: [
           IconButton(
             icon: Icon(Icons.delete_sweep),
@@ -20,8 +19,10 @@ class HistoryScreen extends StatelessWidget {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: Text('Clear History'),
-                  content: Text('Are you sure you want to clear all history?'),
+                  title: Text('Clear History',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  content: Text('Are you sure you want to clear all history?',
+                      style: Theme.of(context).textTheme.bodyMedium),
                   actions: [
                     TextButton(
                       child: Text('Cancel'),
@@ -41,8 +42,10 @@ class HistoryScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firebaseService.getCalculationsHistory(),
+body: StreamBuilder<List<Map<String, dynamic>>>( 
+
+        stream: _firebaseService.getCalculationsHistory().map((data) => data), 
+
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -52,45 +55,48 @@ class HistoryScreen extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+
             return Center(child: Text('No calculations in history'));
           }
 
           return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
+            itemCount: snapshot.data!.length,
+
             itemBuilder: (context, index) {
-              var doc = snapshot.data!.docs[index];
-              var data = doc.data() as Map<String, dynamic>;
+              var data = snapshot.data![index];
+
 
               return Dismissible(
-                key: Key(doc.id),
+                key: Key(data['expression']),
+
                 background: Container(
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.error,
                   alignment: Alignment.centerRight,
                   padding: EdgeInsets.only(right: 20.0),
-                  child: Icon(Icons.delete, color: Colors.white),
+                  child: Icon(Icons.delete),
                 ),
                 direction: DismissDirection.endToStart,
                 onDismissed: (direction) {
-                  _firebaseService.deleteCalculation(doc.id);
+                  _firebaseService.deleteCalculation(data['id']);
+
                 },
                 child: Card(
-                  color: Color(0xFF1E1E1E),
                   margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: ListTile(
                     title: Text(
                       '${data['expression']} = ${data['result']}',
-                      style: TextStyle(color: Colors.white),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     subtitle: Text(
                       'Type: ${data['type']}',
-                      style: TextStyle(color: Colors.grey),
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                     trailing: Text(
                       data['timestamp'] != null
                           ? _formatTimestamp(data['timestamp'] as Timestamp)
                           : '',
-                      style: TextStyle(color: Colors.grey),
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                   ),
                 ),
